@@ -1,6 +1,8 @@
 // noinspection ES6PreferShortImport
 
 import { IDIDManager, IIdentifier, IKeyManager, TAgent } from '../../packages/core-types/src'
+import * as dotenv from "dotenv";
+dotenv.config();
 
 type ConfiguredAgent = TAgent<IDIDManager & IKeyManager>
 
@@ -143,6 +145,17 @@ export default (testContext: {
         }
       })).rejects.toThrow('illegal_argument: Ed25519 keys cannot be used for encryption')
       expect(identifier.provider).toEqual('did:jwk')
+    })
+
+    it.skip('should create identifier using did:ebsi', async () => {
+      identifier = await agent.didManagerCreate({
+        provider: 'did:ebsi',
+        options: {
+          bearer: process.env.EBSI_BEARER,
+        },
+      })
+      expect(identifier.provider).toEqual('did:ebsi')
+      expect(identifier.controllerKeyId).toEqual(identifier.keys[0].kid)
     })
 
     it('should throw error for existing alias provider combo', async () => {

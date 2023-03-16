@@ -77,6 +77,7 @@ import messageHandler from './shared/messageHandler'
 import utils from './shared/utils'
 import { JsonFileStore } from './utils/json-file-store'
 import credentialStatus from './shared/credentialStatus'
+import { EbsiDIDProvider, getDidEbsiResolver } from '../packages/did-provider-ebsi/src'
 
 jest.setTimeout(60000)
 
@@ -168,6 +169,9 @@ const setup = async (options?: IAgentOptions): Promise<boolean> => {
           'did:jwk': new JwkDIDProvider({
             defaultKms: 'local',
           }),
+          'did:ebsi': new EbsiDIDProvider({
+            defaultKms: 'local',
+          }),
           'did:fake': new FakeDidProvider(),
         },
       }),
@@ -178,6 +182,7 @@ const setup = async (options?: IAgentOptions): Promise<boolean> => {
           ...getDidKeyResolver(),
           ...getDidPkhResolver(),
           ...getDidJwkResolver(),
+          ...getDidEbsiResolver(),
           ...new FakeDidResolver(() => agent).getDidFakeResolver(),
         }),
       }),

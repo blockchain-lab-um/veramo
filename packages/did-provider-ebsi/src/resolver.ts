@@ -9,9 +9,9 @@ import {
 } from "did-resolver";
 
 const resolveDidEbsi: DIDResolver = async (
-  didUrl: string,
-  _parsed: ParsedDID,
-  _resolver: Resolvable,
+  did: string,
+  parsed: ParsedDID,
+  resolver: Resolvable,
   options: DIDResolutionOptions
 ): Promise<DIDResolutionResult> => {
   try {
@@ -21,7 +21,7 @@ const resolveDidEbsi: DIDResolver = async (
     const ebsiResolver = getResolver(resolverConfig);
     const didResolver = new Resolver(ebsiResolver);
 
-    const didResolution = await didResolver.resolve(didUrl);
+    const didResolution = await didResolver.resolve(did);
     return didResolution;
   } catch (err: any) {
     return {
@@ -37,6 +37,6 @@ const resolveDidEbsi: DIDResolver = async (
  *
  * @public
  */
-export function getEbsiDidResolver() {
+export function getDidEbsiResolver() {
   return { ebsi: resolveDidEbsi };
 }

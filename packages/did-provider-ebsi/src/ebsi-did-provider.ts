@@ -32,7 +32,7 @@ export class EbsiDIDProvider extends AbstractIdentifierProvider {
     context: IContext,
   ): Promise<Omit<IIdentifier, 'provider'>> {
     if (!options.bearer) {
-      throw new Error('Bearer token should be provided in options')
+      throw new Error('Bearer token should be provided in options argument')
     }
     const bearer = options.bearer as string
 
