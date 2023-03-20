@@ -1,8 +1,6 @@
 // noinspection ES6PreferShortImport
 
 import { IDIDManager, IIdentifier, IKeyManager, TAgent } from '../../packages/core-types/src'
-import * as dotenv from "dotenv";
-dotenv.config();
 
 type ConfiguredAgent = TAgent<IDIDManager & IKeyManager>
 
@@ -147,11 +145,11 @@ export default (testContext: {
       expect(identifier.provider).toEqual('did:jwk')
     })
 
-    it.skip('should create identifier using did:ebsi', async () => {
+    it('should create identifier using did:ebsi', async () => {
       identifier = await agent.didManagerCreate({
         provider: 'did:ebsi',
         options: {
-          bearer: process.env.EBSI_BEARER,
+          bearer: process.env.EBSI_BEARER, // Ebsi bearer should be set as environment variable
         },
       })
       expect(identifier.provider).toEqual('did:ebsi')

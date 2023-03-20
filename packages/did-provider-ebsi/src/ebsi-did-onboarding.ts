@@ -17,6 +17,7 @@ import { randomBytes } from 'crypto'
 import { ethers } from 'ethers'
 import { Agent } from '@cef-ebsi/siop-auth'
 import { privateKeyJwkToHex } from './ebsi-did-utils'
+import { EbsiConfig, EbsiEndpoints } from './constants'
 
 // Main onboard function to call when creating a new identifier
 export async function onboard(args: {
@@ -40,7 +41,7 @@ export async function onboard(args: {
   const idTokenJwt = await new jose.SignJWT(idToken)
     .setProtectedHeader({ alg: 'ES256K', typ: 'JWT', kid })
     .setIssuedAt()
-    .setAudience('https://api-pilot.ebsi.eu/users-onboarding/v2/authentication-responses')
+    .setAudience(`${EbsiConfig.BASE_URL}${EbsiEndpoints.AUTH_RESPONSE}`)
     .setIssuer('https://self-issued.me/v2')
     .setExpirationTime('1h')
     .sign(privateKey)
@@ -67,19 +68,16 @@ export async function requestVerifiableAuthorization(args: {
   idTokenJwt: string
   bearer: string
 }): Promise<IVerifiableAuthorization> {
-  const authenticationResponse = await fetch(
-    'https://api-pilot.ebsi.eu/users-onboarding/v2/authentication-responses',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${args.bearer}`,
-      },
-      body: JSON.stringify({
-        id_token: args.idTokenJwt,
-      }),
+  const authenticationResponse = await fetch(`${EbsiConfig.BASE_URL}${EbsiEndpoints.AUTH_RESPONSE}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${args.bearer}`,
     },
-  )
+    body: JSON.stringify({
+      id_token: args.idTokenJwt,
+    }),
+  })
   if (authenticationResponse.status > 299 || authenticationResponse.status < 200) {
     throw new Error(`${JSON.stringify(await authenticationResponse.json(), null, 2)}`)
   }
@@ -98,7 +96,7 @@ async function exchangeVerifiableAuthorization(args: {
     identifier: args.identifier,
     keyJwks: args.keyJwks,
   })
-  const agent = new Agent({
+  const ebsiAgent = new Agent({
     privateKey: await jose.importJWK(args.keyJwks.privateKeyJwk, 'ES256K'),
     alg: 'ES256K',
     kid: args.identifier.controllerKeyId,
@@ -115,7 +113,7 @@ async function exchangeVerifiableAuthorization(args: {
 
   const nonce = uuidv4()
 
-  const response = await agent.createResponse({
+  const response = await ebsiAgent.createResponse({
     nonce,
     redirectUri: 'https://self-issued.me',
     claims: {
@@ -146,7 +144,7 @@ async function exchangeVerifiableAuthorization(args: {
     id_token: response.idToken as string,
     vp_token: verifiablePresentation.jwtVp,
   }
-  const sessionResponse = await fetch('https://api-pilot.ebsi.eu/authorisation/v2/siop-sessions', {
+  const sessionResponse = await fetch(`${EbsiConfig.BASE_URL}${EbsiEndpoints.SIOP_SESSIONS}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -161,7 +159,7 @@ async function exchangeVerifiableAuthorization(args: {
   const accessToken = await Agent.verifyAkeResponse(session, {
     nonce,
     privateEncryptionKeyJwk: ephemeralKeyJwk,
-    trustedAppsRegistry: 'https://api-pilot.ebsi.eu/trusted-apps-registry/v3/apps',
+    trustedAppsRegistry: `${EbsiConfig.TAR_REG}`,
     alg: 'ES256K',
   })
 
@@ -199,10 +197,10 @@ async function createVerifiablePresentation(args: {
   const jwtVp = await createVerifiablePresentationJwt(
     payload,
     issuer,
-    'https://api-pilot.ebsi.eu/authorisation/v2/siop-sessions',
+    `${EbsiConfig.BASE_URL}${EbsiEndpoints.SIOP_SESSIONS}`,
     {
       skipValidation: true,
-      ebsiAuthority: 'api-pilot.ebsi.eu'.replace('http://', '').replace('https://', ''),
+      ebsiAuthority: EbsiConfig.BASE_URL.replace('http://', '').replace('https://', ''),
       exp: Math.floor(Date.now() / 1000) + 900,
     },
   )
@@ -244,7 +242,7 @@ async function insertDidDocument(args: {
   const bufferMetadata = Buffer.from(JSON.stringify(metadata))
   const hashValue = ethers.utils.sha256(bufferDidDocument)
 
-  const unsignedTxResponse = await fetch('https://api-pilot.ebsi.eu/did-registry/v3/jsonrpc', {
+  const unsignedTxResponse = await fetch(`${EbsiConfig.BASE_URL}${EbsiEndpoints.DID_REGISTRY_RPC}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -295,7 +293,7 @@ async function insertDidDocument(args: {
     id: Math.ceil(Math.random() * 1000),
   }
 
-  const jsonRpcResponse = await fetch('https://api-pilot.ebsi.eu/did-registry/v3/jsonrpc', {
+  const jsonRpcResponse = await fetch(`${EbsiConfig.BASE_URL}${EbsiEndpoints.DID_REGISTRY_RPC}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
