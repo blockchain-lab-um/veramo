@@ -1,6 +1,7 @@
 import { Resolver } from 'did-resolver'
 import { getResolver } from '@cef-ebsi/ebsi-did-resolver'
 import { DIDResolutionOptions, DIDResolutionResult, DIDResolver, ParsedDID, Resolvable } from 'did-resolver'
+import { EbsiConfig } from './constants'
 
 const resolveDidEbsi: DIDResolver = async (
   did: string,
@@ -10,7 +11,7 @@ const resolveDidEbsi: DIDResolver = async (
 ): Promise<DIDResolutionResult> => {
   try {
     const resolverConfig = {
-      registry: 'https://api-pilot.ebsi.eu/did-registry/v3/identifiers',
+      registry: EbsiConfig.DID_REGISTRY,
     }
     const ebsiResolver = getResolver(resolverConfig)
     const didResolver = new Resolver(ebsiResolver)

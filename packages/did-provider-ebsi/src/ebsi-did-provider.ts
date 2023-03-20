@@ -21,7 +21,11 @@ import {
   generateRandomEbsiSubjectIdentifier,
   privateKeyJwkToHex,
 } from './ebsi-did-utils.js'
-import { IEbsiCreateIdentifierOptions, IEbsiDidSupportedKeyTypes } from './types/ebsi-provider-types.js'
+import {
+  IEbsiCreateIdentifierOptions,
+  IEbsiDidSupportedHashTypes,
+  IEbsiDidSupportedKeyTypes,
+} from './types/ebsi-provider-types.js'
 import ec from 'elliptic'
 
 type IContext = IAgentContext<IKeyManager & ICredentialPlugin & IResolver>
@@ -45,7 +49,9 @@ export class EbsiDIDProvider extends AbstractIdentifierProvider {
     context: IContext,
   ): Promise<Omit<IIdentifier, 'provider'>> {
     if (options?.sequence && options?.sequence.length !== 32) {
-      throw new Error('Subject identifier should be 16 bytes (32 characters in hex string, or Uint8Array) long')
+      throw new Error(
+        'Subject identifier should be 16 bytes (32 characters in hex string, or Uint8Array) long',
+      )
     }
 
     if (options?.privateKeyHex && !options?.sequence) {
@@ -59,6 +65,10 @@ export class EbsiDIDProvider extends AbstractIdentifierProvider {
     if (keyType !== 'Secp256k1') {
       throw new Error('Currently, only Secp256k1 key type is supported')
     }
+    const hashType: IEbsiDidSupportedHashTypes = options?.hashType || 'sha256'
+    if (hashType !== 'sha256') {
+      throw new Error('Currently, only sha256 hash type is supported')
+    }
     let jwkThumbprint: string
     let privateKeyJwk: jose.JWK
     let privateKeyHex: string
@@ -66,28 +76,40 @@ export class EbsiDIDProvider extends AbstractIdentifierProvider {
     let subjectIdentifier: string
     if (options?.privateKeyHex) {
       // Import existing custom private key along with the subject identifier
-      const secp256k1 = new ec.ec('secp256k1')
-      privateKeyHex = options.privateKeyHex
-      const privateKey = secp256k1.keyFromPrivate(privateKeyHex, 'hex')
-      privateKeyJwk = {
-        kty: 'EC',
-        crv: 'secp256k1',
-        d: privateKey.getPrivate('hex'),
-        x: privateKey.getPublic().getX().toString('hex'),
-        y: privateKey.getPublic().getY().toString('hex'),
+      switch (keyType) {
+        case 'Secp256k1':
+          const secp256k1 = new ec.ec('secp256k1')
+          privateKeyHex = options.privateKeyHex
+          const privateKey = secp256k1.keyFromPrivate(privateKeyHex, 'hex')
+          privateKeyJwk = {
+            kty: 'EC',
+            crv: 'secp256k1',
+            d: jose.base64url.encode(Buffer.from(privateKey.getPrivate('hex'), 'hex')),
+            x: jose.base64url.encode(Buffer.from(privateKey.getPublic().getX().toString('hex'), 'hex')),
+            y: jose.base64url.encode(Buffer.from(privateKey.getPublic().getY().toString('hex'), 'hex')),
+          }
+          publicKeyJwk = { ...privateKeyJwk }
+          delete publicKeyJwk.d
+          jwkThumbprint = await jose.calculateJwkThumbprint(privateKeyJwk)
+          subjectIdentifier = await generateEbsiSubjectIdentifier(options.sequence)
+          break
+        default:
+          throw new Error('Unsupported key type')
       }
-      publicKeyJwk = { ...privateKeyJwk }
-      delete publicKeyJwk.d
-      jwkThumbprint = await jose.calculateJwkThumbprint(privateKeyJwk)
-      subjectIdentifier = await generateEbsiSubjectIdentifier(options.sequence)
     } else {
       // Generate new key pair
-      const keys = await jose.generateKeyPair('ES256K')
-      privateKeyJwk = await jose.exportJWK(keys.privateKey)
-      publicKeyJwk = await jose.exportJWK(keys.publicKey)
-      jwkThumbprint = await jose.calculateJwkThumbprint(privateKeyJwk, 'sha256')
-      subjectIdentifier = await generateRandomEbsiSubjectIdentifier()
-      privateKeyHex = await privateKeyJwkToHex(privateKeyJwk)
+      switch (keyType) {
+        case 'Secp256k1':
+          const keys = await jose.generateKeyPair('ES256K')
+          privateKeyJwk = await jose.exportJWK(keys.privateKey)
+          publicKeyJwk = await jose.exportJWK(keys.publicKey)
+          jwkThumbprint = await jose.calculateJwkThumbprint(privateKeyJwk, 'sha256')
+          subjectIdentifier = await generateRandomEbsiSubjectIdentifier()
+          privateKeyHex = await privateKeyJwkToHex(privateKeyJwk)
+          break
+        default:
+          throw new Error('Unsupported key type')
+      }
     }
     const kid = `did:ebsi:${subjectIdentifier}#${jwkThumbprint}`
     const did = `did:ebsi:${subjectIdentifier}`

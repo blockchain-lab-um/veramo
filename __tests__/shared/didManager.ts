@@ -1,5 +1,6 @@
 // noinspection ES6PreferShortImport
 
+import { randomBytes } from 'crypto'
 import { IDIDManager, IIdentifier, IKeyManager, TAgent } from '../../packages/core-types/src'
 
 type ConfiguredAgent = TAgent<IDIDManager & IKeyManager>
@@ -218,6 +219,17 @@ export default (testContext: {
       ).rejects.toThrow('Currently, only Secp256k1 key type is supported')
     })
 
+    it('should throw error for providing unsupported hash type for did:ebsi', async () => {
+      await expect(
+        agent.didManagerCreate({
+          provider: 'did:ebsi',
+          options: {
+            hashType: 'xyz',
+          },
+        }),
+      ).rejects.toThrow('Currently, only sha256 hash type is supported')
+    })
+
     it('should throw error for not providing bearer token for did:ebsi onboarding process', async () => {
       await expect(
         agent.didManagerCreate({
@@ -228,7 +240,7 @@ export default (testContext: {
       // "Bearer token is required for onboarding, it should be passed as options parameter"
     })
 
-    it('should create identifier using did:ebsi with already registered DID, where private key along with sequence is provided', async () => {
+    it('should create identifier using did:ebsi with DID already registered, where private key along with sequence is provided', async () => {
       identifier = await agent.didManagerCreate({
         provider: 'did:ebsi',
         options: {
@@ -241,15 +253,36 @@ export default (testContext: {
       expect(identifier.did).toEqual('did:ebsi:zdXUdLZnw3s5dgBuhFyCxcc')
     })
 
-    itif('should create identifier using did:ebsi with not yet registered DID and onboard it, where private key along with sequence is provided', async () => {
+    itif('should create identifier and onboard did using did:ebsi, where private key along with sequence is provided', async () => {
+      const sequence = randomBytes(16).toString('hex')
+      const privateKeyHex = randomBytes(32).toString('hex')
       identifier = await agent.didManagerCreate({
         provider: 'did:ebsi',
         options: {
-          sequence: '27ca548e74bd14275251623cea1ff0c5',
-          privateKeyHex: '2658053a89a091ceb000e0f13d0a47790397e0ebc1234b6a90489430cb6b9e06',
-          bearer: process.env.EBSI_BEARER,
+          sequence,
+          privateKeyHex,
+          bearer: process.env.EBSI_BEARER
         },
       })
+      expect(identifier.provider).toEqual('did:ebsi')
+      expect(identifier.controllerKeyId).toEqual(identifier.keys[0].kid)
+    })
+
+    itif('should create identifier and onboard did using did:ebsi with all options provided', async () => {
+      const sequence = randomBytes(16).toString('hex')
+      const privateKeyHex = randomBytes(32).toString('hex')
+      identifier = await agent.didManagerCreate({
+        provider: 'did:ebsi',
+        options: {
+          sequence,
+          privateKeyHex,
+          bearer: process.env.EBSI_BEARER,
+          hashType: 'sha256',
+          keyType: 'Secp256k1',
+        },
+      })
+      expect(identifier.provider).toEqual('did:ebsi')
+      expect(identifier.controllerKeyId).toEqual(identifier.keys[0].kid)
     })
 
     it('should throw error for existing alias provider combo', async () => {
