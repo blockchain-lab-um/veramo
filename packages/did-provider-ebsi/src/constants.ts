@@ -7,5 +7,5 @@ export namespace EbsiConfig {
 export namespace EbsiEndpoints {
   export const AUTH_RESPONSE = '/users-onboarding/v2/authentication-responses'
   export const SIOP_SESSIONS = '/authorisation/v2/siop-sessions'
-  export const DID_REGISTRY_RPC = "/did-registry/v3/jsonrpc"
+  export const DID_REGISTRY_RPC = '/did-registry/v3/jsonrpc'
 }

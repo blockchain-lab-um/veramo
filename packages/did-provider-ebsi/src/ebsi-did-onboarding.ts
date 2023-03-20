@@ -79,7 +79,7 @@ export async function requestVerifiableAuthorization(args: {
     }),
   })
   if (authenticationResponse.status > 299 || authenticationResponse.status < 200) {
-    throw new Error(`${JSON.stringify(await authenticationResponse.json(), null, 2)}`)
+    throw new Error(`${JSON.stringify((await authenticationResponse.json()), null, 2)}`)
   }
   const va = (await authenticationResponse.json()) as IVerifiableAuthorization
 
