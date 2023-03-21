@@ -1,11 +1,16 @@
 import * as jose from 'jose'
 import { base58btc } from 'multiformats/bases/base58'
 import { randomBytes } from 'crypto'
-import { DIDDocument, DIDResolutionResult } from 'did-resolver'
+import { DIDDocument } from 'did-resolver'
+import { IEbsiDidSupportedEcdsaAlgo, IEbsiDidSupportedKeyTypes } from './types/ebsi-provider-types'
+
+export const algoMap: Record<IEbsiDidSupportedKeyTypes, IEbsiDidSupportedEcdsaAlgo> = {
+  'P-256': 'ES256',
+  Secp256k1: 'ES256K',
+}
 
 export async function generateRandomEbsiSubjectIdentifier(): Promise<string> {
-  const randoBt = randomBytes(16)
-  return Buffer.from(base58btc.encode(Buffer.concat([new Uint8Array([1]), randoBt]))).toString()
+  return Buffer.from(base58btc.encode(Buffer.concat([new Uint8Array([1]), randomBytes(16)]))).toString()
 }
 
 export async function generateEbsiSubjectIdentifier(

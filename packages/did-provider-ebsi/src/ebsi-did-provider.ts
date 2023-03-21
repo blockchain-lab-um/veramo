@@ -17,14 +17,17 @@ import * as jose from 'jose'
 import { AbstractIdentifierProvider } from '@veramo/did-manager'
 import { onboard } from './ebsi-did-onboarding.js'
 import {
+  algoMap,
   generateEbsiSubjectIdentifier,
   generateRandomEbsiSubjectIdentifier,
   privateKeyJwkToHex,
 } from './ebsi-did-utils.js'
 import {
   IEbsiCreateIdentifierOptions,
+  IEbsiDidSupportedEcdsaAlgo,
   IEbsiDidSupportedHashTypes,
   IEbsiDidSupportedKeyTypes,
+  IImportedKey,
 } from './types/ebsi-provider-types.js'
 import ec from 'elliptic'
 
@@ -61,66 +64,38 @@ export class EbsiDIDProvider extends AbstractIdentifierProvider {
     if (options?.privateKeyHex && options?.privateKeyHex?.length !== 64) {
       throw new Error('Private key should be 32 bytes (64 characters in hex string) long')
     }
-    const keyType: IEbsiDidSupportedKeyTypes = options?.keyType || 'Secp256k1'
-    if (keyType !== 'Secp256k1') {
-      throw new Error('Currently, only Secp256k1 key type is supported')
-    }
+
     const hashType: IEbsiDidSupportedHashTypes = options?.hashType || 'sha256'
     if (hashType !== 'sha256') {
       throw new Error('Currently, only sha256 hash type is supported')
     }
-    let jwkThumbprint: string
-    let privateKeyJwk: jose.JWK
-    let privateKeyHex: string
-    let publicKeyJwk: jose.JWK
-    let subjectIdentifier: string
-    if (options?.privateKeyHex) {
-      // Import existing custom private key along with the subject identifier
-      switch (keyType) {
-        case 'Secp256k1':
-          const secp256k1 = new ec.ec('secp256k1')
-          privateKeyHex = options.privateKeyHex
-          const privateKey = secp256k1.keyFromPrivate(privateKeyHex, 'hex')
-          privateKeyJwk = {
-            kty: 'EC',
-            crv: 'secp256k1',
-            d: jose.base64url.encode(Buffer.from(privateKey.getPrivate('hex'), 'hex')),
-            x: jose.base64url.encode(Buffer.from(privateKey.getPublic().getX().toString('hex'), 'hex')),
-            y: jose.base64url.encode(Buffer.from(privateKey.getPublic().getY().toString('hex'), 'hex')),
-          }
-          publicKeyJwk = { ...privateKeyJwk }
-          delete publicKeyJwk.d
-          jwkThumbprint = await jose.calculateJwkThumbprint(privateKeyJwk)
-          subjectIdentifier = await generateEbsiSubjectIdentifier(options.sequence)
-          break
-        default:
-          throw new Error('Unsupported key type')
-      }
-    } else {
-      // Generate new key pair
-      switch (keyType) {
-        case 'Secp256k1':
-          const keys = await jose.generateKeyPair('ES256K')
-          privateKeyJwk = await jose.exportJWK(keys.privateKey)
-          publicKeyJwk = await jose.exportJWK(keys.publicKey)
-          jwkThumbprint = await jose.calculateJwkThumbprint(privateKeyJwk, 'sha256')
-          subjectIdentifier = await generateRandomEbsiSubjectIdentifier()
-          privateKeyHex = await privateKeyJwkToHex(privateKeyJwk)
-          break
-        default:
-          throw new Error('Unsupported key type')
-      }
-    }
-    const kid = `did:ebsi:${subjectIdentifier}#${jwkThumbprint}`
-    const did = `did:ebsi:${subjectIdentifier}`
+    const keyType = options?.keyType || 'Secp256k1'
+    const importedKey = await this.importKey({
+      privateKeyHex: options?.privateKeyHex,
+      sequence: options?.sequence,
+      keyType,
+    })
+    const privateKeyHex = importedKey.privateKeyHex
+
+    const kid = `did:ebsi:${importedKey.subjectIdentifier}#${importedKey.jwkThumbprint}`
+    const did = `did:ebsi:${importedKey.subjectIdentifier}`
     let key: ManagedKeyInfo
     let resolution = await context.agent.resolveDid({ didUrl: did })
 
     if (resolution.didDocument) {
+      const resolvedVerificationMethod = resolution.didDocument.verificationMethod?.find(
+        (vm) => vm.id === kid,
+      )
+
+      if (!resolvedVerificationMethod) {
+        throw new Error(
+          `${kid} does not match any key id in resolved did doc's verification method, check provided crv: ${keyType}`,
+        )
+      }
       key = await context.agent.keyManagerImport({
         kid,
         privateKeyHex,
-        type: 'Secp256k1',
+        type: keyType === 'P-256' ? 'Secp256r1' : keyType,
         kms: this.defaultKms || 'local',
       })
       return {
@@ -135,11 +110,10 @@ export class EbsiDIDProvider extends AbstractIdentifierProvider {
       throw new Error('Bearer token is required for onboarding, it should be passed as options parameter')
     }
     const bearer = options.bearer
-
     key = await context.agent.keyManagerImport({
       kid,
       privateKeyHex,
-      type: 'Secp256k1',
+      type: keyType === 'P-256' ? 'Secp256r1' : keyType,
       kms: this.defaultKms || 'local',
     })
 
@@ -151,8 +125,8 @@ export class EbsiDIDProvider extends AbstractIdentifierProvider {
     }
 
     const keyJwks = {
-      privateKeyJwk,
-      publicKeyJwk,
+      privateKeyJwk: importedKey.privateKeyJwk,
+      publicKeyJwk: importedKey.publicKeyJwk,
     }
     const onboardedResult = await onboard({ bearer, identifier, keyJwks })
 
@@ -165,6 +139,69 @@ export class EbsiDIDProvider extends AbstractIdentifierProvider {
     }
 
     return identifier
+  }
+
+  async importKey(args: {
+    privateKeyHex?: string
+    keyType?: IEbsiDidSupportedKeyTypes
+    sequence?: Uint8Array | string
+  }): Promise<IImportedKey> {
+    let jwkThumbprint: string
+    let privateKeyJwk: jose.JWK
+    let privateKeyHex: string
+    let publicKeyJwk: jose.JWK
+    let subjectIdentifier: string
+    let keyType: IEbsiDidSupportedKeyTypes = args.keyType || 'Secp256k1'
+    let crv: string
+    const algorithm: IEbsiDidSupportedEcdsaAlgo = algoMap[keyType]
+    if (!algorithm) {
+      throw new Error(`Unsupported key type, currently only supported Secp256k1 and P-256`)
+    }
+    let curve: ec.ec
+    switch (keyType) {
+      case 'Secp256k1':
+        curve = new ec.ec('secp256k1')
+        crv = 'secp256k1'
+        break
+      case 'P-256':
+        curve = new ec.ec('p256')
+        crv = 'P-256'
+        break
+      default:
+        throw new Error(`Unsupported key type, currently only supported Secp256k1 and P-256`)
+    }
+
+    if (args.privateKeyHex) {
+      // Import existing custom private key along with the subject identifier
+      privateKeyHex = args.privateKeyHex
+      const privateKey = curve.keyFromPrivate(privateKeyHex, 'hex')
+      privateKeyJwk = {
+        kty: 'EC',
+        crv,
+        d: jose.base64url.encode(Buffer.from(privateKey.getPrivate('hex'), 'hex')),
+        x: jose.base64url.encode(Buffer.from(privateKey.getPublic().getX().toString('hex'), 'hex')),
+        y: jose.base64url.encode(Buffer.from(privateKey.getPublic().getY().toString('hex'), 'hex')),
+      }
+      publicKeyJwk = { ...privateKeyJwk }
+      delete publicKeyJwk.d
+      jwkThumbprint = await jose.calculateJwkThumbprint(privateKeyJwk, 'sha256')
+      subjectIdentifier = await generateEbsiSubjectIdentifier(args.sequence)
+    } else {
+      // Generate new key pair
+      const keys = await jose.generateKeyPair(algorithm)
+      privateKeyJwk = await jose.exportJWK(keys.privateKey)
+      publicKeyJwk = await jose.exportJWK(keys.publicKey)
+      jwkThumbprint = await jose.calculateJwkThumbprint(privateKeyJwk, 'sha256')
+      subjectIdentifier = await generateRandomEbsiSubjectIdentifier()
+      privateKeyHex = await privateKeyJwkToHex(privateKeyJwk)
+    }
+    return {
+      jwkThumbprint,
+      privateKeyJwk,
+      publicKeyJwk,
+      subjectIdentifier,
+      privateKeyHex,
+    } as IImportedKey
   }
 
   async updateIdentifier(

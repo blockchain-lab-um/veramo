@@ -131,5 +131,29 @@ export type IEbsiCreateIdentifierOptions = {
   sequence?: Uint8Array | string
 }
 
-export type IEbsiDidSupportedKeyTypes = 'Secp256k1'
+export type IEbsiDidSupportedKeyTypes = 'Secp256k1' | 'P-256'
 export type IEbsiDidSupportedHashTypes = 'sha256'
+export type IEbsiDidSupportedEcdsaAlgo = 'ES256' | 'ES256K'
+
+export type IImportedKey = {
+  /**
+   * JWK thumbprint
+   */
+  jwkThumbprint: string
+  /**
+   * Passed or generated private key in hex format
+   */
+  privateKeyHex: string
+  /**
+   * Passed or generated private key in JWK format
+   */
+  privateKeyJwk: JWK
+  /**
+   * Passed or generated public key in JWK format
+   */
+  publicKeyJwk: JWK
+  /**
+   * Generated subject identifier
+   */
+  subjectIdentifier: string
+}

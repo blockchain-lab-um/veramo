@@ -6,6 +6,8 @@ import {
 import { IIdentifier } from '@veramo/core'
 import * as jose from 'jose'
 import {
+  IEbsiDidSupportedEcdsaAlgo,
+  IEbsiDidSupportedKeyTypes,
   IKeyJwks,
   IRPCResult,
   ISession,
@@ -16,7 +18,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { randomBytes } from 'crypto'
 import { ethers } from 'ethers'
 import { Agent } from '@cef-ebsi/siop-auth'
-import { privateKeyJwkToHex } from './ebsi-did-utils'
+import { algoMap, privateKeyJwkToHex } from './ebsi-did-utils'
 import { EbsiConfig, EbsiEndpoints } from './constants'
 
 // Main onboard function to call when creating a new identifier
@@ -36,10 +38,13 @@ export async function onboard(args: {
     nonce: uuidv4(),
     responseMode: 'form_post',
   }
-
-  const privateKey = await jose.importJWK(args.keyJwks.privateKeyJwk, 'ES256K')
+  if (!args.keyJwks.privateKeyJwk.crv) {
+    throw new Error('Missing crv')
+  }
+  const alg = algoMap[args.keyJwks.privateKeyJwk.crv as IEbsiDidSupportedKeyTypes] || 'ES256K'
+  const privateKey = await jose.importJWK(args.keyJwks.privateKeyJwk, alg)
   const idTokenJwt = await new jose.SignJWT(idToken)
-    .setProtectedHeader({ alg: 'ES256K', typ: 'JWT', kid })
+    .setProtectedHeader({ alg, typ: 'JWT', kid })
     .setIssuedAt()
     .setAudience(`${EbsiConfig.BASE_URL}${EbsiEndpoints.AUTH_RESPONSE}`)
     .setIssuer('https://self-issued.me/v2')
@@ -79,7 +84,7 @@ export async function requestVerifiableAuthorization(args: {
     }),
   })
   if (authenticationResponse.status > 299 || authenticationResponse.status < 200) {
-    throw new Error(`${JSON.stringify((await authenticationResponse.json()), null, 2)}`)
+    throw new Error(`${JSON.stringify(await authenticationResponse.json(), null, 2)}`)
   }
   const va = (await authenticationResponse.json()) as IVerifiableAuthorization
 
@@ -91,18 +96,19 @@ async function exchangeVerifiableAuthorization(args: {
   identifier: Omit<IIdentifier, 'provider'>
   keyJwks: IKeyJwks
 }): Promise<string> {
+  const alg = algoMap[args.keyJwks.privateKeyJwk.crv as IEbsiDidSupportedKeyTypes] || 'ES256K'
   const verifiablePresentation = await createVerifiablePresentation({
     verifiableAuthorization: args.verifiableAuthorization,
     identifier: args.identifier,
     keyJwks: args.keyJwks,
   })
   const ebsiAgent = new Agent({
-    privateKey: await jose.importJWK(args.keyJwks.privateKeyJwk, 'ES256K'),
-    alg: 'ES256K',
+    privateKey: await jose.importJWK(args.keyJwks.privateKeyJwk, alg),
+    alg,
     kid: args.identifier.controllerKeyId,
     siopV2: true,
   })
-  const ephemeralKey = await jose.generateKeyPair('ES256K')
+  const ephemeralKey = await jose.generateKeyPair(alg)
   const ephemeralKeyJwk = await jose.exportJWK(ephemeralKey.privateKey)
 
   if (!ephemeralKeyJwk.d) {
@@ -160,7 +166,7 @@ async function exchangeVerifiableAuthorization(args: {
     nonce,
     privateEncryptionKeyJwk: ephemeralKeyJwk,
     trustedAppsRegistry: `${EbsiConfig.TAR_REG}`,
-    alg: 'ES256K',
+    alg,
   })
 
   return accessToken
@@ -171,6 +177,8 @@ async function createVerifiablePresentation(args: {
   identifier: Omit<IIdentifier, 'provider'>
   keyJwks: IKeyJwks
 }): Promise<IVerifiablePresentation> {
+  const alg = args.keyJwks.privateKeyJwk.alg as 'ES256' | 'ES256K' | 'EdDSA'
+
   const verifiableAuthorization = args.verifiableAuthorization.verifiableCredential
   if (args.identifier.controllerKeyId === undefined) {
     throw new Error('Controller Key ID undefined')
@@ -183,7 +191,7 @@ async function createVerifiablePresentation(args: {
     kid: args.identifier.controllerKeyId,
     privateKeyJwk: args.keyJwks.privateKeyJwk,
     publicKeyJwk: args.keyJwks.publicKeyJwk,
-    alg: 'ES256K',
+    alg,
   }
 
   const payload = {
