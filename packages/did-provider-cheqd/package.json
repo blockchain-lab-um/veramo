@@ -1,0 +1,40 @@
+{
+  "name": "@veramo/did-provider-cheqd",
+  "description": "Veramo ebsi-cheqd based identity controller plugin.",
+  "version": "0.1.0",
+  "main": "build/index.js",
+  "exports": "./build/index.js",
+  "types": "build/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/elliptic": "6.4.14",
+    "@types/uuid": "^9.0.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "@veramo/core-types": "workspace:^5.1.2",
+    "@veramo/did-manager": "workspace:^5.1.2"
+  },
+  "files": [
+    "build/**/*",
+    "src/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": "git@github.com:uport-project/veramo.git",
+  "author": "Urban Vidovič <urban.vidovic2@um.si>",
+  "contributors": [],
+  "license": "Apache-2.0",
+  "keywords": [],
+  "type": "module",
+  "moduleDirectories": [
+    "node_modules",
+    "src"
+  ]
+}

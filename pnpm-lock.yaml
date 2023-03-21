@@ -528,6 +528,23 @@ importers:
     devDependencies:
       typescript: 4.9.4
 
+  packages/did-provider-cheqd:
+    specifiers:
+      '@types/elliptic': 6.4.14
+      '@types/uuid': ^9.0.1
+      '@veramo/core-types': workspace:^5.1.2
+      '@veramo/did-manager': workspace:^5.1.2
+      ts-node: ^10.9.1
+      typescript: ^4.9.5
+    dependencies:
+      '@veramo/core-types': link:../core-types
+      '@veramo/did-manager': link:../did-manager
+    devDependencies:
+      '@types/elliptic': 6.4.14
+      '@types/uuid': 9.0.1
+      ts-node: 10.9.1_typescript@4.9.5
+      typescript: 4.9.5
+
   packages/did-provider-ethr:
     specifiers:
       '@ethersproject/abstract-provider': ^5.7.0
@@ -4472,7 +4489,7 @@ packages:
       npmlog: 6.0.2
     dev: true
 
-  /@lerna/publish/6.4.1_nx@15.6.3+typescript@4.9.4:
+  /@lerna/publish/6.4.1_nx@15.6.3+typescript@4.9.5:
     resolution: {integrity: sha512-/D/AECpw2VNMa1Nh4g29ddYKRIqygEV1ftV8PYXVlHpqWN7VaKrcbRU6pn0ldgpFlMyPtESfv1zS32F5CQ944w==}
     engines: {node: ^14.15.0 || >=16.0.0}
     dependencies:
@@ -4494,7 +4511,7 @@ packages:
       '@lerna/run-lifecycle': 6.4.1
       '@lerna/run-topologically': 6.4.1
       '@lerna/validation-error': 6.4.1
-      '@lerna/version': 6.4.1_nx@15.6.3+typescript@4.9.4
+      '@lerna/version': 6.4.1_nx@15.6.3+typescript@4.9.5
       fs-extra: 9.1.0
       libnpmaccess: 6.0.4
       npm-package-arg: 8.1.1
@@ -4631,7 +4648,7 @@ packages:
       npmlog: 6.0.2
     dev: true
 
-  /@lerna/version/6.4.1_nx@15.6.3+typescript@4.9.4:
+  /@lerna/version/6.4.1_nx@15.6.3+typescript@4.9.5:
     resolution: {integrity: sha512-1/krPq0PtEqDXtaaZsVuKev9pXJCkNC1vOo2qCcn6PBkODw/QTAvGcUi0I+BM2c//pdxge9/gfmbDo1lC8RtAQ==}
     engines: {node: ^14.15.0 || >=16.0.0}
     dependencies:
@@ -4649,7 +4666,7 @@ packages:
       '@lerna/run-topologically': 6.4.1
       '@lerna/temp-write': 6.4.1
       '@lerna/validation-error': 6.4.1
-      '@nrwl/devkit': 15.6.3_nx@15.6.3+typescript@4.9.4
+      '@nrwl/devkit': 15.6.3_nx@15.6.3+typescript@4.9.5
       chalk: 4.1.2
       dedent: 0.7.0
       load-json-file: 6.2.0
@@ -4967,12 +4984,12 @@ packages:
       - debug
     dev: true
 
-  /@nrwl/devkit/15.6.3_nx@15.6.3+typescript@4.9.4:
+  /@nrwl/devkit/15.6.3_nx@15.6.3+typescript@4.9.5:
     resolution: {integrity: sha512-/JDvdzNxUM+C1PCZPCrvmFx+OfywqZdOq1GS9QR8C0VctTLG4D/SGSFD88O1SAdcbH/f1mMiBGfEYZYd23fghQ==}
     peerDependencies:
       nx: '>= 14 <= 16'
     dependencies:
-      '@phenomnomnominal/tsquery': 4.1.1_typescript@4.9.4
+      '@phenomnomnominal/tsquery': 4.1.1_typescript@4.9.5
       ejs: 3.1.8
       ignore: 5.2.4
       nx: 15.6.3
@@ -5148,13 +5165,13 @@ packages:
       webcrypto-core: 1.7.5
     dev: false
 
-  /@phenomnomnominal/tsquery/4.1.1_typescript@4.9.4:
+  /@phenomnomnominal/tsquery/4.1.1_typescript@4.9.5:
     resolution: {integrity: sha512-jjMmK1tnZbm1Jq5a7fBliM4gQwjxMU7TFoRNwIyzwlO+eHPRCFv/Nv+H/Gi1jc3WR7QURG8D5d0Tn12YGrUqBQ==}
     peerDependencies:
       typescript: ^3 || ^4
     dependencies:
       esquery: 1.4.0
-      typescript: 4.9.4
+      typescript: 4.9.5
     dev: true
 
   /@pmmmwh/react-refresh-webpack-plugin/0.5.10_unmakpayn7vcxadrrsbqlrpehy:
@@ -6426,6 +6443,10 @@ packages:
 
   /@types/uuid/9.0.0:
     resolution: {integrity: sha512-kr90f+ERiQtKWMz5rP32ltJ/BtULDI5RVO0uavn1HQUOwjx0R1h0rnDYNL0CepF1zL5bSY6FISAfd9tOdDhU5Q==}
+    dev: true
+
+  /@types/uuid/9.0.1:
+    resolution: {integrity: sha512-rFT3ak0/2trgvp4yYZo5iKFEPsET7vKydKF+VRCxlQ9bpheehyAJH89dAkaLEq/j/RZXJIqcgsmPJKUP1Z28HA==}
     dev: true
 
   /@types/ws/8.5.4:
@@ -13708,16 +13729,16 @@ packages:
       '@lerna/init': 6.4.1
       '@lerna/link': 6.4.1
       '@lerna/list': 6.4.1
-      '@lerna/publish': 6.4.1_nx@15.6.3+typescript@4.9.4
+      '@lerna/publish': 6.4.1_nx@15.6.3+typescript@4.9.5
       '@lerna/run': 6.4.1
       '@lerna/validation-error': 6.4.1
-      '@lerna/version': 6.4.1_nx@15.6.3+typescript@4.9.4
-      '@nrwl/devkit': 15.6.3_nx@15.6.3+typescript@4.9.4
+      '@lerna/version': 6.4.1_nx@15.6.3+typescript@4.9.5
+      '@nrwl/devkit': 15.6.3_nx@15.6.3+typescript@4.9.5
       import-local: 3.1.0
       inquirer: 8.2.5
       npmlog: 6.0.2
       nx: 15.6.3
-      typescript: 4.9.4
+      typescript: 4.9.5
     transitivePeerDependencies:
       - '@swc-node/register'
       - '@swc/core'
@@ -18663,7 +18684,7 @@ packages:
       json5: 2.2.3
       normalize-path: 3.0.0
       safe-stable-stringify: 2.4.2
-      typescript: 4.9.4
+      typescript: 4.9.5
 
   /ts-node/10.9.1_awa2wsr5thmg3i7jqycphctjfq:
     resolution: {integrity: sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==}
@@ -18692,6 +18713,36 @@ packages:
       diff: 4.0.2
       make-error: 1.3.6
       typescript: 4.9.4
+      v8-compile-cache-lib: 3.0.1
+      yn: 3.1.1
+    dev: true
+
+  /ts-node/10.9.1_typescript@4.9.5:
+    resolution: {integrity: sha512-NtVysVPkxxrwFGUUxGYhfux8k78pQB3JqYBXlLRZgdGUqTO5wU/UyHop5p70iEbGhB7q5KmiZiU0Y3KlJrScEw==}
+    hasBin: true
+    peerDependencies:
+      '@swc/core': '>=1.2.50'
+      '@swc/wasm': '>=1.2.50'
+      '@types/node': '*'
+      typescript: '>=2.7'
+    peerDependenciesMeta:
+      '@swc/core':
+        optional: true
+      '@swc/wasm':
+        optional: true
+    dependencies:
+      '@cspotcode/source-map-support': 0.8.1
+      '@tsconfig/node10': 1.0.9
+      '@tsconfig/node12': 1.0.11
+      '@tsconfig/node14': 1.0.3
+      '@tsconfig/node16': 1.0.3
+      acorn: 8.8.1
+      acorn-walk: 8.2.0
+      arg: 4.1.3
+      create-require: 1.1.1
+      diff: 4.0.2
+      make-error: 1.3.6
+      typescript: 4.9.5
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
     dev: true
@@ -19160,6 +19211,12 @@ packages:
 
   /typescript/4.9.4:
     resolution: {integrity: sha512-Uz+dTXYzxXXbsFpM86Wh3dKCxrQqUcVMxwU54orwlJjOpO3ao8L7j5lH+dWfTwgCwIuM9GQ2kvVotzYJMXTBZg==}
+    engines: {node: '>=4.2.0'}
+    hasBin: true
+    dev: true
+
+  /typescript/4.9.5:
+    resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
     engines: {node: '>=4.2.0'}
     hasBin: true
 
