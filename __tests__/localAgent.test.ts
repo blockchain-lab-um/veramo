@@ -7,9 +7,7 @@
  * This suite also runs a ganache local blockchain to run through some examples of DIDComm using did:ethr identifiers.
  */
 
-import {
-  createAgent,
-} from '../packages/core/src'
+import { createAgent } from '../packages/core/src'
 import {
   IAgentOptions,
   ICredentialPlugin,
@@ -37,6 +35,7 @@ import {
 } from '../packages/credential-ld/src'
 import { EthrDIDProvider } from '../packages/did-provider-ethr/src'
 import { WebDIDProvider } from '../packages/did-provider-web/src'
+import { getDidEbsiResolver, EbsiDIDProvider } from '../packages/did-provider-ebsi/src'
 import { getDidKeyResolver, KeyDIDProvider } from '../packages/did-provider-key/src'
 import { getDidPkhResolver, PkhDIDProvider } from '../packages/did-provider-pkh/src'
 import { getDidJwkResolver, JwkDIDProvider } from '../packages/did-provider-jwk/src'
@@ -90,7 +89,7 @@ import didCommWithEthrDidFlow from './shared/didCommWithEthrDidFlow'
 import utils from './shared/utils'
 import web3 from './shared/web3'
 import credentialStatus from './shared/credentialStatus'
-import ethrDidFlowSigned from "./shared/ethrDidFlowSigned";
+import ethrDidFlowSigned from './shared/ethrDidFlowSigned'
 
 jest.setTimeout(60000)
 
@@ -115,8 +114,7 @@ let dbConnection: Promise<DataSource>
 let databaseFile: string
 
 const setup = async (options?: IAgentOptions): Promise<boolean> => {
-  databaseFile =
-    options?.context?.databaseFile || ':memory:'
+  databaseFile = options?.context?.databaseFile || ':memory:'
   dbConnection = new DataSource({
     name: options?.context?.['dbName'] || 'test',
     type: 'sqlite',
@@ -205,6 +203,9 @@ const setup = async (options?: IAgentOptions): Promise<boolean> => {
           'did:jwk': new JwkDIDProvider({
             defaultKms: 'local',
           }),
+          'did:ebsi': new EbsiDIDProvider({
+            defaultKms: 'local',
+          }),
           'did:fake': new FakeDidProvider(),
         },
       }),
@@ -224,6 +225,7 @@ const setup = async (options?: IAgentOptions): Promise<boolean> => {
         ...getDidKeyResolver(),
         ...getDidPkhResolver(),
         ...getDidJwkResolver(),
+        ...getDidEbsiResolver(),
         ...new FakeDidResolver(() => agent).getDidFakeResolver(),
       }),
       new DataStore(dbConnection),

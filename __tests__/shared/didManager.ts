@@ -1,5 +1,7 @@
 // noinspection ES6PreferShortImport
 
+import { randomBytes } from 'crypto'
+import ec from 'elliptic'
 import { IDIDManager, IIdentifier, IKeyManager, TAgent } from '../../packages/core-types/src'
 
 type ConfiguredAgent = TAgent<IDIDManager & IKeyManager>
@@ -143,6 +145,227 @@ export default (testContext: {
         }
       })).rejects.toThrow('illegal_argument: Ed25519 keys cannot be used for encryption')
       expect(identifier.provider).toEqual('did:jwk')
+    })
+
+    const itif = process.env.EBSI_BEARER ? it : it.skip
+    itif('should create and onboard did:ebsi identifier, default parameters', async () => {
+      identifier = await agent.didManagerCreate({
+        provider: 'did:ebsi',
+        options: {
+          bearer: process.env.EBSI_BEARER,
+        },
+      })
+      expect(identifier.provider).toEqual('did:ebsi')
+      expect(identifier.controllerKeyId).toEqual(identifier.keys[0].kid)
+      expect(identifier.keys[0].type).toEqual('Secp256k1')
+    })
+
+    itif('should create and onboard did:ebsi identifier, with private key type P-256', async () => {
+      identifier = await agent.didManagerCreate({
+        provider: 'did:ebsi',
+        options: {
+          bearer: process.env.EBSI_BEARER,
+          keyType: 'P-256',
+        },
+      })
+      expect(identifier.provider).toEqual('did:ebsi')
+      expect(identifier.controllerKeyId).toEqual(identifier.keys[0].kid)
+      expect(identifier.keys[0].type).toEqual('Secp256r1')
+    })
+
+    itif('should create and onboard did:ebsi identifier, with custom private key, type Secp256k1', async () => {
+      const id = randomBytes(16).toString('hex')
+      const curve = new ec.ec('secp256k1')
+      const keyPair = curve.genKeyPair()
+      const privateKeyHex = keyPair.getPrivate('hex')
+      identifier = await agent.didManagerCreate({
+        provider: 'did:ebsi',
+        options: {
+          id,
+          privateKeyHex,
+          bearer: process.env.EBSI_BEARER,
+        },
+      })
+      expect(identifier.provider).toEqual('did:ebsi')
+      expect(identifier.controllerKeyId).toEqual(identifier.keys[0].kid)
+      expect(identifier.keys[0].type).toEqual('Secp256k1')
+    })
+
+    itif('should create and onboard did:ebsi identifier, with custom private key, type P-256', async () => {
+      const id = randomBytes(16).toString('hex')
+      const curve = new ec.ec('p256')
+      const keyPair = curve.genKeyPair()
+      const privateKeyHex = keyPair.getPrivate('hex')
+      identifier = await agent.didManagerCreate({
+        provider: 'did:ebsi',
+        options: {
+          id,
+          privateKeyHex,
+          bearer: process.env.EBSI_BEARER,
+          keyType: 'P-256',
+        },
+      })
+      expect(identifier.provider).toEqual('did:ebsi')
+      expect(identifier.controllerKeyId).toEqual(identifier.keys[0].kid)
+      expect(identifier.keys[0].type).toEqual('Secp256r1')
+    })
+
+    itif('should create identifier and onboard did using did:ebsi with all options provided', async () => {
+      const id = randomBytes(16).toString('hex')
+      const privateKeyHex = randomBytes(32).toString('hex')
+      identifier = await agent.didManagerCreate({
+        provider: 'did:ebsi',
+        options: {
+          id,
+          privateKeyHex,
+          bearer: process.env.EBSI_BEARER,
+          hashType: 'sha256',
+          keyType: 'Secp256k1',
+        },
+      })
+      expect(identifier.provider).toEqual('did:ebsi')
+      expect(identifier.controllerKeyId).toEqual(identifier.keys[0].kid)
+    })
+
+    it('should create did:ebsi identifier from provided private key, identifier id, and key type secp256k1 (DID already registered)', async () => {
+      identifier = await agent.didManagerCreate({
+        provider: 'did:ebsi',
+        options: {
+          id: '27ca548e74bd14275251623cea1ff0c5',
+          privateKeyHex: '2658053a899091ceb000e0f13d0a47790397e0ebc84e2b6a90489430cb6b9e06',
+          keyType: 'Secp256k1',
+        },
+      })
+      expect(identifier.provider).toEqual('did:ebsi')
+      expect(identifier.controllerKeyId).toEqual(identifier.keys[0].kid)
+      expect(identifier.did).toEqual('did:ebsi:zdXUdLZnw3s5dgBuhFyCxcc')
+      expect(identifier.keys[0].type).toEqual('Secp256k1')
+    })
+
+    it('should create did:ebsi identifier from provided private key, identifier id, and key type P-256 (DID already registered)', async () => {
+      identifier = await agent.didManagerCreate({
+        provider: 'did:ebsi',
+        options: {
+          id: '9f3fa87a46b0c03fe6dfeda7fcea220a',
+          privateKeyHex: '83828541f41c2760b75ee04b600fc8999641a2944f67f708b4d64000c552bb81',
+          keyType: 'P-256',
+        },
+      })
+      expect(identifier.provider).toEqual('did:ebsi')
+      expect(identifier.controllerKeyId).toEqual(identifier.keys[0].kid)
+      expect(identifier.did).toEqual('did:ebsi:ztH3jgzdkcwRpYVvX9ZToeZ')
+      expect(identifier.keys[0].type).toEqual('Secp256r1')
+    })
+
+    it('should throw error for trying to create did:ebsi identifier from provided private key, identifier id and wrong key type (Secp256k1)', async () => {
+      await expect(
+        agent.didManagerCreate({
+          provider: 'did:ebsi',
+          options: {
+            id: '9f3fa87a46b0c03fe6dfeda7fcea220a',
+            privateKeyHex: '83828541f41c2760b75ee04b600fc8999641a2944f67f708b4d64000c552bb81',
+            keyType: 'Secp256k1',
+          },
+        }),
+      ).rejects.toThrow(
+        "did:ebsi:ztH3jgzdkcwRpYVvX9ZToeZ#Lj3WT0OglDJpgAGOMxsFF15SXR6jhyi4dWGgNUgqBZQ does not match any key id in resolved did doc's verification method, check provided crv: Secp256k1",
+      )
+    })
+
+    it('should throw error for trying to create did:ebsi identifier from provided private key, identifier id and wrong key type (P-256)', async () => {
+      await expect(
+        agent.didManagerCreate({
+          provider: 'did:ebsi',
+          options: {
+            id: '27ca548e74bd14275251623cea1ff0c5',
+            privateKeyHex: '2658053a899091ceb000e0f13d0a47790397e0ebc84e2b6a90489430cb6b9e06',
+            keyType: 'P-256',
+          },
+        }),
+      ).rejects.toThrow(
+        "did:ebsi:zdXUdLZnw3s5dgBuhFyCxcc#wfd7Q0oKUxkN9Jee4DoM41da98jLORL3GxidNSnaWMo does not match any key id in resolved did doc's verification method, check provided crv: P-256",
+      )
+    })
+
+    it('should throw error trying to onboard did:ebsi using expired bearer token', async () => {
+      await expect(
+        agent.didManagerCreate({
+          provider: 'did:ebsi',
+          options: {
+            bearer:
+              'eyJhbGciOiJFUzI1NksiLCJ0eXAiOiJKV1QiLCJraWQiOiJkaWQ6ZWJzaTp6cjJyV0RISHJVQ2RaQVc3d3NTYjVuUSNrZXlzLTEifQ.eyJvbmJvYXJkaW5nIjoicmVjYXB0Y2hhIiwidmFsaWRhdGVkSW5mbyI6eyJzdWNjZXNzIjp0cnVlLCJjaGFsbGVuZ2VfdHMiOiIyMDIzLTAzLTIwVDE2OjQ5OjUxWiIsImhvc3RuYW1lIjoiYXBwLXBpbG90LmVic2kuZXUiLCJzY29yZSI6MC45LCJhY3Rpb24iOiJsb2dpbiJ9LCJpc3MiOiJkaWQ6ZWJzaTp6cjJyV0RISHJVQ2RaQVc3d3NTYjVuUSIsImlhdCI6MTY3OTMzMDk5MywiZXhwIjoxNjc5MzMxODkzfQ.W6fIWj5t7hPuVTwa5WGrnyG8-aYLP4OwCSnoPX7fLiL9S9I5xYQfzu0kXXmglsIPtaNzFOOIx2C8jIIxlp0xMw', // Ebsi bearer should be set as environment variable
+          },
+        }),
+      ).rejects.toThrow(
+        '{\n  "title": "Unauthorized",\n  "status": 401,\n  "type": "about:blank",\n  "detail": "\\"exp\\" claim timestamp check failed"\n}',
+      )
+    })
+
+    it('should throw error for providing private key hex without id parameter trying to create did:ebsi', async () => {
+      await expect(
+        agent.didManagerCreate({
+          provider: 'did:ebsi',
+          options: {
+            privateKeyHex: 'f3157fbbb356a0d56a84a1a9752f81d0638cce4153168bd1b46f68a6e62b82b0',
+          },
+        }),
+      ).rejects.toThrow('Currently, subject identifier id should be provided along with a private key')
+    })
+
+    it('should throw error for providing too short private key hex trying to create did:ebsi', async () => {
+      await expect(
+        agent.didManagerCreate({
+          provider: 'did:ebsi',
+          options: {
+            privateKeyHex: '1234',
+            id: '27ca548e74bd14275251623cea1ff0c5',
+          },
+        }),
+      ).rejects.toThrow('Private key should be 32 bytes (64 characters in hex string) long')
+    })
+
+    it('should throw error for providing too short id trying to create did:ebsi', async () => {
+      await expect(
+        agent.didManagerCreate({
+          provider: 'did:ebsi',
+          options: {
+            id: '1234',
+          },
+        }),
+      ).rejects.toThrow(
+        'Subject identifier should be 16 bytes (32 characters in hex string, or Uint8Array) long',
+      )
+    })
+
+    it('should throw error for providing unsupported key type for did:ebsi', async () => {
+      await expect(
+        agent.didManagerCreate({
+          provider: 'did:ebsi',
+          options: {
+            keyType: 'xyz',
+          },
+        }),
+      ).rejects.toThrow('Unsupported key type, currently only supported Secp256k1 and P-256')
+    })
+
+    it('should throw error for providing unsupported hash type for did:ebsi', async () => {
+      await expect(
+        agent.didManagerCreate({
+          provider: 'did:ebsi',
+          options: {
+            hashType: 'xyz',
+          },
+        }),
+      ).rejects.toThrow('Currently, only sha256 hash type is supported')
+    })
+
+    it('should throw error for not providing bearer token for did:ebsi onboarding process', async () => {
+      await expect(
+        agent.didManagerCreate({
+          provider: 'did:ebsi',
+          options: {},
+        }),
+      ).rejects.toThrow('Bearer token is required for onboarding, it should be passed as options parameter')
     })
 
     it('should throw error for existing alias provider combo', async () => {

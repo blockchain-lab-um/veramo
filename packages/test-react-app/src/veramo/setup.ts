@@ -31,6 +31,8 @@ import {
 import { getDidKeyResolver, KeyDIDProvider } from '@veramo/did-provider-key'
 import { getDidPkhResolver, PkhDIDProvider } from '@veramo/did-provider-pkh'
 import { getDidJwkResolver, JwkDIDProvider } from '@veramo/did-provider-jwk'
+// TODO: change line below to import { getDidEbsiResolver, EbsiDIDProvider } from '@veramo/did-provider-ebsi' when ready
+import { getDidEbsiResolver, EbsiDIDProvider } from '../../../did-provider-ebsi/src'
 import { DIDComm, DIDCommMessageHandler, IDIDComm } from '@veramo/did-comm'
 import { ISelectiveDisclosure, SdrMessageHandler, SelectiveDisclosure } from '@veramo/selective-disclosure'
 import { KeyManagementSystem, SecretBox } from '@veramo/kms-local'
@@ -69,6 +71,7 @@ export function getAgent(options?: IAgentOptions): TAgent<InstalledPlugins> {
           ...getDidKeyResolver(),
           ...getDidPkhResolver(),
           ...getDidJwkResolver(),
+          ...getDidEbsiResolver(),
           ...new FakeDidResolver(() => agent as TAgent<IDIDManager>).getDidFakeResolver(),
         }),
       }),
@@ -115,6 +118,9 @@ export function getAgent(options?: IAgentOptions): TAgent<InstalledPlugins> {
             defaultKms: 'local',
           }),
           'did:jwk': new JwkDIDProvider({
+            defaultKms: 'local',
+          }),
+          'did:ebsi': new EbsiDIDProvider({
             defaultKms: 'local',
           }),
           'did:fake': new FakeDidProvider(),

@@ -1,0 +1,48 @@
+{
+  "name": "@veramo/did-provider-ebsi",
+  "description": "Veramo ebsi-did based identity controller plugin.",
+  "version": "0.1.0",
+  "main": "build/index.js",
+  "exports": "./build/index.js",
+  "types": "build/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/elliptic": "6.4.14",
+    "@types/uuid": "^9.0.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "@cef-ebsi/ebsi-did-resolver": "3.0.0-alpha.4",
+    "@cef-ebsi/siop-auth": "3.0.0-alpha.4",
+    "@cef-ebsi/verifiable-presentation": "5.0.0-alpha.8",
+    "@veramo/core": "^5.1.0",
+    "@veramo/did-manager": "^5.1.0",
+    "@veramo/utils": "workspace:^5.1.2",
+    "crypto": "^1.0.1",
+    "ethers": "^5.7.2",
+    "jose": "^4.13.1",
+    "multiformats": "^9.9.0"
+  },
+  "files": [
+    "build/**/*",
+    "src/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": "git@github.com:uport-project/veramo.git",
+  "author": "Urban Vidovič <urban.vidovic2@um.si>",
+  "contributors": [],
+  "license": "Apache-2.0",
+  "keywords": [],
+  "type": "module",
+  "moduleDirectories": [
+    "node_modules",
+    "src"
+  ]
+}

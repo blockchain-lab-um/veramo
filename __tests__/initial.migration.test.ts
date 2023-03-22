@@ -19,6 +19,7 @@ import { DIDResolverPlugin } from '../packages/did-resolver/src'
 import { EthrDIDProvider } from '../packages/did-provider-ethr/src'
 import { WebDIDProvider } from '../packages/did-provider-web/src'
 import { getDidKeyResolver, KeyDIDProvider } from '../packages/did-provider-key/src'
+import { getDidEbsiResolver, EbsiDIDProvider } from '../packages/did-provider-ebsi/src'
 import { DIDComm, IDIDComm } from '../packages/did-comm/src'
 import { KeyManagementSystem, SecretBox } from '../packages/kms-local/src'
 import {
@@ -121,6 +122,9 @@ describe('database initial migration tests', () => {
                 'did:key': new KeyDIDProvider({
                   defaultKms: 'local',
                 }),
+                'did:ebsi': new EbsiDIDProvider({
+                  defaultKms: 'local',
+                }),
                 'did:fake': new FakeDidProvider(),
               },
             }),
@@ -129,6 +133,7 @@ describe('database initial migration tests', () => {
                 ...ethrDidResolver({ infuraProjectId }),
                 ...webDidResolver(),
                 ...getDidKeyResolver(),
+                ...getDidEbsiResolver(),
                 ...new FakeDidResolver(() => agent).getDidFakeResolver(),
               }),
             }),

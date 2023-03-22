@@ -66,6 +66,16 @@ export default (testContext: {
       expect(result).toHaveProperty('didResolutionMetadata')
     });
 
+    it('should resolve did:ebsi', async () => {
+      const didUrl = "did:ebsi:zhiW8Vr6MKV6W4Nh8QR3Xdo"
+      const result = await agent.resolveDid({ didUrl })
+      const didDoc = result.didDocument
+      expect(didDoc?.id).toEqual(didUrl)
+      // console.log(result)
+      expect(result).toHaveProperty('didDocumentMetadata')
+      expect(result).toHaveProperty('didResolutionMetadata')
+    });
+
     it('should resolve imported fake did', async () => {
       const did = 'did:fake:myfakedid'
       await agent.didManagerImport({
