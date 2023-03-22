@@ -128,7 +128,7 @@ export type IEbsiCreateIdentifierOptions = {
    * Custom sequence of 16 bytes used for generating a subject identifier, must be passed along with private key, 32 bytes hex string or uint8array
    * i.e. 27ca548e74bd14275251623cea1ff0c5 or Uint8Array([132, 156, 183, 245, 109, 91, 99, 250, 84, 198, 222, 61, 170, 87, 120, 151])
    */
-  sequence?: Uint8Array | string
+  id?: Uint8Array | string
 }
 
 export type IEbsiDidSupportedKeyTypes = 'Secp256k1' | 'P-256'

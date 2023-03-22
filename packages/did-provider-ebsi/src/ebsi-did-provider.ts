@@ -30,6 +30,7 @@ import {
   IImportedKey,
 } from './types/ebsi-provider-types.js'
 import ec from 'elliptic'
+import { hexToBytes, bytesToBase64url } from '@veramo/utils'
 
 type IContext = IAgentContext<IKeyManager & ICredentialPlugin & IResolver>
 
@@ -51,14 +52,14 @@ export class EbsiDIDProvider extends AbstractIdentifierProvider {
     { kms, options }: { kms?: string; options?: IEbsiCreateIdentifierOptions },
     context: IContext,
   ): Promise<Omit<IIdentifier, 'provider'>> {
-    if (options?.sequence && options?.sequence.length !== 32) {
+    if (options?.id && options?.id.length !== 32) {
       throw new Error(
         'Subject identifier should be 16 bytes (32 characters in hex string, or Uint8Array) long',
       )
     }
 
-    if (options?.privateKeyHex && !options?.sequence) {
-      throw new Error('Currently, subject identifier sequence should be provided along with a private key')
+    if (options?.privateKeyHex && !options?.id) {
+      throw new Error('Currently, subject identifier id should be provided along with a private key')
     }
 
     if (options?.privateKeyHex && options?.privateKeyHex?.length !== 64) {
@@ -72,7 +73,7 @@ export class EbsiDIDProvider extends AbstractIdentifierProvider {
     const keyType = options?.keyType || 'Secp256k1'
     const importedKey = await this.importKey({
       privateKeyHex: options?.privateKeyHex,
-      sequence: options?.sequence,
+      id: options?.id,
       keyType,
     })
     const privateKeyHex = importedKey.privateKeyHex
@@ -144,11 +145,11 @@ export class EbsiDIDProvider extends AbstractIdentifierProvider {
   async importKey(args: {
     privateKeyHex?: string
     keyType?: IEbsiDidSupportedKeyTypes
-    sequence?: Uint8Array | string
+    id?: Uint8Array | string
   }): Promise<IImportedKey> {
     let jwkThumbprint: string
     let privateKeyJwk: jose.JWK
-    let privateKeyHex: string
+    let privateKeyHex = args.privateKeyHex
     let publicKeyJwk: jose.JWK
     let subjectIdentifier: string
     let keyType: IEbsiDidSupportedKeyTypes = args.keyType || 'Secp256k1'
@@ -173,19 +174,21 @@ export class EbsiDIDProvider extends AbstractIdentifierProvider {
 
     if (args.privateKeyHex) {
       // Import existing custom private key along with the subject identifier
-      privateKeyHex = args.privateKeyHex
-      const privateKey = curve.keyFromPrivate(privateKeyHex, 'hex')
+      const privateKey = curve.keyFromPrivate(args.privateKeyHex, 'hex')
+      let y = bytesToBase64url(hexToBytes(privateKey.getPublic().getY().toString('hex')))
+      let x = bytesToBase64url(hexToBytes(privateKey.getPublic().getX().toString('hex')))
+      let d = bytesToBase64url(hexToBytes(args.privateKeyHex))
       privateKeyJwk = {
         kty: 'EC',
         crv,
-        d: jose.base64url.encode(Buffer.from(privateKey.getPrivate('hex'), 'hex')),
-        x: jose.base64url.encode(Buffer.from(privateKey.getPublic().getX().toString('hex'), 'hex')),
-        y: jose.base64url.encode(Buffer.from(privateKey.getPublic().getY().toString('hex'), 'hex')),
+        d,
+        x,
+        y,
       }
       publicKeyJwk = { ...privateKeyJwk }
       delete publicKeyJwk.d
       jwkThumbprint = await jose.calculateJwkThumbprint(privateKeyJwk, 'sha256')
-      subjectIdentifier = await generateEbsiSubjectIdentifier(args.sequence)
+      subjectIdentifier = await generateEbsiSubjectIdentifier(args.id)
     } else {
       // Generate new key pair
       const keys = await jose.generateKeyPair(algorithm)

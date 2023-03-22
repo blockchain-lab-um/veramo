@@ -174,14 +174,14 @@ export default (testContext: {
     })
 
     itif('should create and onboard did:ebsi identifier, with custom private key, type Secp256k1', async () => {
-      const sequence = randomBytes(16).toString('hex')
+      const id = randomBytes(16).toString('hex')
       const curve = new ec.ec('secp256k1')
       const keyPair = curve.genKeyPair()
       const privateKeyHex = keyPair.getPrivate('hex')
       identifier = await agent.didManagerCreate({
         provider: 'did:ebsi',
         options: {
-          sequence,
+          id,
           privateKeyHex,
           bearer: process.env.EBSI_BEARER,
         },
@@ -192,14 +192,14 @@ export default (testContext: {
     })
 
     itif('should create and onboard did:ebsi identifier, with custom private key, type P-256', async () => {
-      const sequence = randomBytes(16).toString('hex')
+      const id = randomBytes(16).toString('hex')
       const curve = new ec.ec('p256')
       const keyPair = curve.genKeyPair()
       const privateKeyHex = keyPair.getPrivate('hex')
       identifier = await agent.didManagerCreate({
         provider: 'did:ebsi',
         options: {
-          sequence,
+          id,
           privateKeyHex,
           bearer: process.env.EBSI_BEARER,
           keyType: 'P-256',
@@ -211,12 +211,12 @@ export default (testContext: {
     })
 
     itif('should create identifier and onboard did using did:ebsi with all options provided', async () => {
-      const sequence = randomBytes(16).toString('hex')
+      const id = randomBytes(16).toString('hex')
       const privateKeyHex = randomBytes(32).toString('hex')
       identifier = await agent.didManagerCreate({
         provider: 'did:ebsi',
         options: {
-          sequence,
+          id,
           privateKeyHex,
           bearer: process.env.EBSI_BEARER,
           hashType: 'sha256',
@@ -227,11 +227,11 @@ export default (testContext: {
       expect(identifier.controllerKeyId).toEqual(identifier.keys[0].kid)
     })
 
-    it('should create did:ebsi identifier from provided private key, identifier sequence, and key type secp256k1 (DID already registered)', async () => {
+    it('should create did:ebsi identifier from provided private key, identifier id, and key type secp256k1 (DID already registered)', async () => {
       identifier = await agent.didManagerCreate({
         provider: 'did:ebsi',
         options: {
-          sequence: '27ca548e74bd14275251623cea1ff0c5',
+          id: '27ca548e74bd14275251623cea1ff0c5',
           privateKeyHex: '2658053a899091ceb000e0f13d0a47790397e0ebc84e2b6a90489430cb6b9e06',
           keyType: 'Secp256k1',
         },
@@ -242,11 +242,11 @@ export default (testContext: {
       expect(identifier.keys[0].type).toEqual('Secp256k1')
     })
 
-    it('should create did:ebsi identifier from provided private key, identifier sequence, and key type P-256 (DID already registered)', async () => {
+    it('should create did:ebsi identifier from provided private key, identifier id, and key type P-256 (DID already registered)', async () => {
       identifier = await agent.didManagerCreate({
         provider: 'did:ebsi',
         options: {
-          sequence: '9f3fa87a46b0c03fe6dfeda7fcea220a',
+          id: '9f3fa87a46b0c03fe6dfeda7fcea220a',
           privateKeyHex: '83828541f41c2760b75ee04b600fc8999641a2944f67f708b4d64000c552bb81',
           keyType: 'P-256',
         },
@@ -257,12 +257,12 @@ export default (testContext: {
       expect(identifier.keys[0].type).toEqual('Secp256r1')
     })
 
-    it('should throw error for trying to create did:ebsi identifier from provided private key, identifier sequence and wrong key type (Secp256k1)', async () => {
+    it('should throw error for trying to create did:ebsi identifier from provided private key, identifier id and wrong key type (Secp256k1)', async () => {
       await expect(
         agent.didManagerCreate({
           provider: 'did:ebsi',
           options: {
-            sequence: '9f3fa87a46b0c03fe6dfeda7fcea220a',
+            id: '9f3fa87a46b0c03fe6dfeda7fcea220a',
             privateKeyHex: '83828541f41c2760b75ee04b600fc8999641a2944f67f708b4d64000c552bb81',
             keyType: 'Secp256k1',
           },
@@ -272,12 +272,12 @@ export default (testContext: {
       )
     })
 
-    it('should throw error for trying to create did:ebsi identifier from provided private key, identifier sequence and wrong key type (P-256)', async () => {
+    it('should throw error for trying to create did:ebsi identifier from provided private key, identifier id and wrong key type (P-256)', async () => {
       await expect(
         agent.didManagerCreate({
           provider: 'did:ebsi',
           options: {
-            sequence: '27ca548e74bd14275251623cea1ff0c5',
+            id: '27ca548e74bd14275251623cea1ff0c5',
             privateKeyHex: '2658053a899091ceb000e0f13d0a47790397e0ebc84e2b6a90489430cb6b9e06',
             keyType: 'P-256',
           },
@@ -301,7 +301,7 @@ export default (testContext: {
       )
     })
 
-    it('should throw error for providing private key hex without sequence parameter trying to create did:ebsi', async () => {
+    it('should throw error for providing private key hex without id parameter trying to create did:ebsi', async () => {
       await expect(
         agent.didManagerCreate({
           provider: 'did:ebsi',
@@ -309,7 +309,7 @@ export default (testContext: {
             privateKeyHex: 'f3157fbbb356a0d56a84a1a9752f81d0638cce4153168bd1b46f68a6e62b82b0',
           },
         }),
-      ).rejects.toThrow('Currently, subject identifier sequence should be provided along with a private key')
+      ).rejects.toThrow('Currently, subject identifier id should be provided along with a private key')
     })
 
     it('should throw error for providing too short private key hex trying to create did:ebsi', async () => {
@@ -318,18 +318,18 @@ export default (testContext: {
           provider: 'did:ebsi',
           options: {
             privateKeyHex: '1234',
-            sequence: '27ca548e74bd14275251623cea1ff0c5',
+            id: '27ca548e74bd14275251623cea1ff0c5',
           },
         }),
       ).rejects.toThrow('Private key should be 32 bytes (64 characters in hex string) long')
     })
 
-    it('should throw error for providing too short sequence trying to create did:ebsi', async () => {
+    it('should throw error for providing too short id trying to create did:ebsi', async () => {
       await expect(
         agent.didManagerCreate({
           provider: 'did:ebsi',
           options: {
-            sequence: '1234',
+            id: '1234',
           },
         }),
       ).rejects.toThrow(

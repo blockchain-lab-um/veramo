@@ -20,6 +20,7 @@
     "@cef-ebsi/verifiable-presentation": "5.0.0-alpha.8",
     "@veramo/core": "^5.1.0",
     "@veramo/did-manager": "^5.1.0",
+    "@veramo/utils": "workspace:^5.1.2",
     "crypto": "^1.0.1",
     "ethers": "^5.7.2",
     "jose": "^4.13.1",
